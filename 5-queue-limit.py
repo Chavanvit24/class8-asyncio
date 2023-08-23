@@ -5,32 +5,34 @@ import time
 # coroutine to generate work
 
 
-async def producer(queqe):
+async def producer(queue, id):
     print(f'{time.ctime()} Producer: Running')
     # generate work
     for i in range(10):
-        # generate work
+        # generate a value
         value = random()
         # block to simulate work
-        await asyncio.sleep(value)
-        # add to the queqe
-        await queqe.put(value)
-    print(f'{time.ctime()} Producer: Done')
+        await asyncio.sleep((id + 1)*0.1)
+        # add to the queue
+        await queue.put(value)
+    # send an all done signal
+
+    print(f'{time.ctime()} Producer {id}: Done')
 
 
-async def consumer(queqe):
+async def consumer(queue):
     print(f'{time.ctime()} Consumer: Running')
     # consume work
     while True:
-        # get a unit for work
-        item = await queqe.get()
+        # get a unit of work
+        item = await queue.get()
         # report
-        print(f'{time.ctime()} >got {item}')
+        print(f'{time.ctime()} > got {item}')
         # block while processing
         if item:
             await asyncio.sleep(item)
-        # mark as completed
-        queqe.task_done()
+        # mark the task as done
+        queue.task_done()
     # all done
     print(f'{time.ctime()} Consumer: Done')
 
@@ -38,78 +40,79 @@ async def consumer(queqe):
 
 
 async def main():
-    # create the shared queqe
+    # create a shared queue
     queue = asyncio.Queue(2)
-    # start the consumer
+    # start consumer
     _ = asyncio.create_task(consumer(queue))
-    # create many product
-    product = [producer(queue) for _ in range(5)]
+    # create many producers
+    producers = [producer(queue, i) for i in range(5)]
     # run and wait for the producers to finish
-    await asyncio.gather(*product)
-    # wait for the consumer to process all item
+    await asyncio.gather(*producers)
+    # run the producer and consumer
     await queue.join()
+
+
 # start the asyncio program
 asyncio.run(main())
 
-
-# Wed Aug 23 14:38:03 2023 Consumer: Running
-# Wed Aug 23 14:38:03 2023 Producer: Running
-# Wed Aug 23 14:38:03 2023 Producer: Running
-# Wed Aug 23 14:38:03 2023 Producer: Running
-# Wed Aug 23 14:38:03 2023 Producer: Running
-# Wed Aug 23 14:38:03 2023 Producer: Running
-# Wed Aug 23 14:38:03 2023 >got 0.061669762608179024
-# Wed Aug 23 14:38:03 2023 >got 0.29187310708620495
-# Wed Aug 23 14:38:04 2023 >got 0.10091515725135347
-# Wed Aug 23 14:38:04 2023 >got 0.5129086347964157
-# Wed Aug 23 14:38:04 2023 >got 0.5385972968890629
-# Wed Aug 23 14:38:05 2023 >got 0.7024823325702738
-# Wed Aug 23 14:38:06 2023 >got 0.1466917569147831
-# Wed Aug 23 14:38:06 2023 >got 0.6768521252534866
-# Wed Aug 23 14:38:06 2023 >got 0.49259713923287485
-# Wed Aug 23 14:38:07 2023 >got 0.9687807542192975
-# Wed Aug 23 14:38:08 2023 >got 0.353653556903905
-# Wed Aug 23 14:38:08 2023 >got 0.963571843761843
-# Wed Aug 23 14:38:09 2023 >got 0.6012307505935006
-# Wed Aug 23 14:38:10 2023 >got 0.1333881537307593
-# Wed Aug 23 14:38:10 2023 >got 0.10351875307075054
-# Wed Aug 23 14:38:10 2023 >got 0.08507163995483236
-# Wed Aug 23 14:38:10 2023 >got 0.7547131070441372
-# Wed Aug 23 14:38:11 2023 >got 0.5770608272080934
-# Wed Aug 23 14:38:12 2023 >got 0.21678420289434663
-# Wed Aug 23 14:38:12 2023 >got 0.03608463478716384
-# Wed Aug 23 14:38:12 2023 >got 0.4490546793306718
-# Wed Aug 23 14:38:12 2023 >got 0.2196565228733105
-# Wed Aug 23 14:38:12 2023 >got 0.9838206933294457
-# Wed Aug 23 14:38:13 2023 >got 0.8067606937856804
-# Wed Aug 23 14:38:14 2023 >got 0.06217006993334995
-# Wed Aug 23 14:38:14 2023 >got 0.1204594461931372
-# Wed Aug 23 14:38:14 2023 >got 0.2373952906380905
-# Wed Aug 23 14:38:15 2023 >got 0.7723844340281704
-# Wed Aug 23 14:38:16 2023 >got 0.16004540024558211
-# Wed Aug 23 14:38:16 2023 >got 0.14841411138244764
-# Wed Aug 23 14:38:16 2023 >got 0.39237065927526504
-# Wed Aug 23 14:38:16 2023 >got 0.3408478956590305
-# Wed Aug 23 14:38:17 2023 >got 0.4704055041080204
-# Wed Aug 23 14:38:17 2023 >got 0.5114732030394137
-# Wed Aug 23 14:38:18 2023 >got 0.7276906019050613
-# Wed Aug 23 14:38:18 2023 >got 0.6267874424011657
-# Wed Aug 23 14:38:19 2023 >got 0.04727946151066664
-# Wed Aug 23 14:38:19 2023 >got 0.6291829578974156
-# Wed Aug 23 14:38:20 2023 >got 0.5025081048842173
-# Wed Aug 23 14:38:20 2023 Producer: Done
-# Wed Aug 23 14:38:20 2023 >got 0.6797982717087191
-# Wed Aug 23 14:38:21 2023 >got 0.3675335978587879
-# Wed Aug 23 14:38:21 2023 >got 0.5157547410950781
-# Wed Aug 23 14:38:22 2023 >got 0.06600657363055851
-# Wed Aug 23 14:38:22 2023 >got 0.2029991546670451
-# Wed Aug 23 14:38:22 2023 Producer: Done
-# Wed Aug 23 14:38:22 2023 >got 0.9066222381083012
-# Wed Aug 23 14:38:22 2023 Producer: Done
-# Wed Aug 23 14:38:23 2023 >got 0.38106391889266356
-# Wed Aug 23 14:38:23 2023 >got 0.416409975057319
-# Wed Aug 23 14:38:23 2023 Producer: Done
-# Wed Aug 23 14:38:24 2023 >got 0.25933258024567585
-# Wed Aug 23 14:38:24 2023 Producer: Done
-# Wed Aug 23 14:38:24 2023 >got 0.06593292355998626
-# Wed Aug 23 14:38:24 2023 >got 0.9908742247564428
+# Wed Aug 23 15:16:10 2023 Consumer: Running
+# Wed Aug 23 15:16:10 2023 Producer: Running
+# Wed Aug 23 15:16:10 2023 Producer: Running
+# Wed Aug 23 15:16:10 2023 Producer: Running
+# Wed Aug 23 15:16:10 2023 Producer: Running
+# Wed Aug 23 15:16:10 2023 Producer: Running
+# Wed Aug 23 15:16:11 2023 > got 0.14675463796399846
+# Wed Aug 23 15:16:11 2023 > got 0.3979498662079691
+# Wed Aug 23 15:16:11 2023 > got 0.7389706331202228
+# Wed Aug 23 15:16:12 2023 > got 0.30552365720686736
+# Wed Aug 23 15:16:12 2023 > got 0.812317185111225
+# Wed Aug 23 15:16:13 2023 > got 0.3122261068855071
+# Wed Aug 23 15:16:13 2023 > got 0.8801480745405877
+# Wed Aug 23 15:16:14 2023 > got 0.10436473097559984
+# Wed Aug 23 15:16:14 2023 > got 0.07829337670361947
+# Wed Aug 23 15:16:14 2023 > got 0.2787294667669826
+# Wed Aug 23 15:16:15 2023 > got 0.9089279530779593
+# Wed Aug 23 15:16:16 2023 > got 0.41972359687145
+# Wed Aug 23 15:16:16 2023 > got 0.9539330166179875
+# Wed Aug 23 15:16:17 2023 > got 0.9005662795013692
+# Wed Aug 23 15:16:18 2023 > got 0.4764087342858422
+# Wed Aug 23 15:16:18 2023 > got 0.7605060921134578
+# Wed Aug 23 15:16:19 2023 > got 0.9546876151347929
+# Wed Aug 23 15:16:20 2023 > got 0.27165254954354945
+# Wed Aug 23 15:16:20 2023 > got 0.0370651036675006
+# Wed Aug 23 15:16:20 2023 > got 0.6654957844142799
+# Wed Aug 23 15:16:21 2023 > got 0.8085173789089005
+# Wed Aug 23 15:16:22 2023 > got 0.05113637209385613
+# Wed Aug 23 15:16:22 2023 > got 0.5689738733558471
+# Wed Aug 23 15:16:23 2023 > got 0.10517204788861145
+# Wed Aug 23 15:16:23 2023 > got 0.08897215267267877
+# Wed Aug 23 15:16:23 2023 > got 0.6706518125569516
+# Wed Aug 23 15:16:23 2023 > got 0.2740908443868094
+# Wed Aug 23 15:16:24 2023 > got 0.7269305494356353
+# Wed Aug 23 15:16:24 2023 > got 0.8949685026888465
+# Wed Aug 23 15:16:25 2023 > got 0.057227687978718245
+# Wed Aug 23 15:16:25 2023 > got 0.8666469277467894
+# Wed Aug 23 15:16:26 2023 > got 0.16580325371797
+# Wed Aug 23 15:16:26 2023 > got 0.38500661324621677
+# Wed Aug 23 15:16:27 2023 > got 0.3998709904436435
+# Wed Aug 23 15:16:27 2023 > got 0.4507676326212655
+# Wed Aug 23 15:16:28 2023 > got 0.8725050818723924
+# Wed Aug 23 15:16:29 2023 > got 0.4308696506444496
+# Wed Aug 23 15:16:29 2023 Producer 0: Done
+# Wed Aug 23 15:16:29 2023 > got 0.0710061636914544
+# Wed Aug 23 15:16:29 2023 > got 0.7331124723208313
+# Wed Aug 23 15:16:30 2023 > got 0.028085858303726896
+# Wed Aug 23 15:16:30 2023 Producer 1: Done
+# Wed Aug 23 15:16:30 2023 > got 0.4893533084515189
+# Wed Aug 23 15:16:30 2023 > got 0.9490586607532269
+# Wed Aug 23 15:16:31 2023 > got 0.7187387878676837
+# Wed Aug 23 15:16:32 2023 > got 0.3875972903376952
+# Wed Aug 23 15:16:33 2023 > got 0.42214629818971094
+# Wed Aug 23 15:16:33 2023 Producer 3: Done
+# Wed Aug 23 15:16:33 2023 > got 0.571313085489165
+# Wed Aug 23 15:16:34 2023 > got 0.6344970340456884
+# Wed Aug 23 15:16:34 2023 Producer 2: Done
+# Wed Aug 23 15:16:34 2023 > got 0.42532581899499067
+# Wed Aug 23 15:16:34 2023 Producer 4: Done
+# Wed Aug 23 15:16:35 2023 > got 0.9886223792631345
+# Wed Aug 23 15:16:36 2023 > got 0.7425115443041651
